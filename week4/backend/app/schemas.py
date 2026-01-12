@@ -26,3 +26,17 @@ class ActionItemRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TagCreate(BaseModel):
+    name: str
+    color: str
+
+
+class TagRead(BaseModel):
+    id: int
+    name: str
+    color: str
+
+    class Config:
+        from_attributes = True

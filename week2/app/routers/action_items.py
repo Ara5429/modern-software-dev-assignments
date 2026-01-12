@@ -1,42 +1,67 @@
 from __future__ import annotations
 
+# Refactored - TODO 3
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 
 from .. import db
-from ..services.extract import extract_action_items
+from ..schemas import ActionItemResponse, ExtractRequest, ExtractResponse
+from ..services.extract import extract_action_items, extract_action_items_llm
 
 
 router = APIRouter(prefix="/action-items", tags=["action-items"])
 
 
 @router.post("/extract")
-def extract(payload: Dict[str, Any]) -> Dict[str, Any]:
-    text = str(payload.get("text", "")).strip()
+def extract(request: ExtractRequest) -> ExtractResponse:
+    """Extract action items using Pydantic request/response schemas."""
+    text = str(request.text).strip()
     if not text:
         raise HTTPException(status_code=400, detail="text is required")
 
     note_id: Optional[int] = None
-    if payload.get("save_note"):
+    if request.save_note:
         note_id = db.insert_note(text)
 
     items = extract_action_items(text)
     ids = db.insert_action_items(items, note_id=note_id)
-    return {"note_id": note_id, "items": [{"id": i, "text": t} for i, t in zip(ids, items)]}
+    return ExtractResponse(
+        note_id=note_id,
+        items=[{"id": i, "text": t} for i, t in zip(ids, items)],
+    )
+
+
+@router.post("/extract-llm")
+def extract_llm(request: ExtractRequest) -> ExtractResponse:
+    """Extract action items using LLM."""
+    # AI Generated - TODO 4
+    text = request.text
+
+    note_id: Optional[int] = None
+    if request.save_note:
+        note_id = db.insert_note(text)
+
+    items = extract_action_items_llm(text)
+    ids = db.insert_action_items(items, note_id=note_id)
+
+    return ExtractResponse(
+        note_id=note_id,
+        items=[{"id": i, "text": t} for i, t in zip(ids, items)],
+    )
 
 
 @router.get("")
-def list_all(note_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def list_all(note_id: Optional[int] = None) -> List[ActionItemResponse]:
     rows = db.list_action_items(note_id=note_id)
     return [
-        {
-            "id": r["id"],
-            "note_id": r["note_id"],
-            "text": r["text"],
-            "done": bool(r["done"]),
-            "created_at": r["created_at"],
-        }
+        ActionItemResponse(
+            id=r["id"],
+            note_id=r["note_id"],
+            text=r["text"],
+            done=bool(r["done"]),
+            created_at=r["created_at"],
+        )
         for r in rows
     ]
 

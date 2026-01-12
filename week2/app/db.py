@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# Error handling - TODO 3
 import sqlite3
 from pathlib import Path
 from typing import Optional
@@ -50,11 +51,15 @@ def init_db() -> None:
 
 
 def insert_note(content: str) -> int:
-    with get_connection() as connection:
-        cursor = connection.cursor()
-        cursor.execute("INSERT INTO notes (content) VALUES (?)", (content,))
-        connection.commit()
-        return int(cursor.lastrowid)
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("INSERT INTO notes (content) VALUES (?)", (content,))
+            connection.commit()
+            return int(cursor.lastrowid)
+    except sqlite3.Error as e:
+        print(f"Database error in insert_note: {e}")
+        raise RuntimeError(f"Failed to insert note: {e}")
 
 
 def list_notes() -> list[sqlite3.Row]:
@@ -65,28 +70,36 @@ def list_notes() -> list[sqlite3.Row]:
 
 
 def get_note(note_id: int) -> Optional[sqlite3.Row]:
-    with get_connection() as connection:
-        cursor = connection.cursor()
-        cursor.execute(
-            "SELECT id, content, created_at FROM notes WHERE id = ?",
-            (note_id,),
-        )
-        row = cursor.fetchone()
-        return row
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT id, content, created_at FROM notes WHERE id = ?",
+                (note_id,),
+            )
+            row = cursor.fetchone()
+            return row
+    except sqlite3.Error as e:
+        print(f"Database error in get_note: {e}")
+        return None
 
 
 def insert_action_items(items: list[str], note_id: Optional[int] = None) -> list[int]:
-    with get_connection() as connection:
-        cursor = connection.cursor()
-        ids: list[int] = []
-        for item in items:
-            cursor.execute(
-                "INSERT INTO action_items (note_id, text) VALUES (?, ?)",
-                (note_id, item),
-            )
-            ids.append(int(cursor.lastrowid))
-        connection.commit()
-        return ids
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            ids: list[int] = []
+            for item in items:
+                cursor.execute(
+                    "INSERT INTO action_items (note_id, text) VALUES (?, ?)",
+                    (note_id, item),
+                )
+                ids.append(int(cursor.lastrowid))
+            connection.commit()
+            return ids
+    except sqlite3.Error as e:
+        print(f"Database error in insert_action_items: {e}")
+        raise RuntimeError(f"Failed to insert action items: {e}")
 
 
 def list_action_items(note_id: Optional[int] = None) -> list[sqlite3.Row]:

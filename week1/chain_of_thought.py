@@ -8,7 +8,28 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+Example:
+Q: What is 2^100 (mod 7)?
+Step 1: Find the pattern of powers of 2 mod 7
+- 2^1 = 2
+- 2^2 = 4
+- 2^3 = 8 mod 7 = 1
+- 2^4 = 2 (pattern repeats)
+Step 2: The cycle length is 3
+Step 3: 100 mod 3 = 1
+Step 4: So 2^100 mod 7 = 2^1 mod 7 = 2
+Answer: 2
+
+You are a math expert. Solve modular exponentiation problems step by step:
+1. Calculate small powers to find the repeating pattern (cycle)
+2. Find the cycle length
+3. Reduce the exponent using: exponent mod cycle_length
+4. Calculate the final result
+5. End with "Answer: <number>"
+
+Think carefully through each step.
+"""
 
 
 USER_PROMPT = """

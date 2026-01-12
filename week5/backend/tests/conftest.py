@@ -36,4 +36,14 @@ def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as c:
         yield c
 
-    os.unlink(db_path)
+    # Ensure the file is not locked before unlinking
+    import time
+    for _ in range(10):
+        try:
+            os.unlink(db_path)
+            break
+        except PermissionError:
+            time.sleep(0.1)
+    else:
+        # Raise error if file still can\'t be unlinked after retry
+        os.unlink(db_path)

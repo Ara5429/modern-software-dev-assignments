@@ -37,7 +37,21 @@ QUESTION = (
 
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """You are a helpful coding assistant that writes Python code based ONLY on the provided documentation.
+
+Rules:
+1. Use ONLY the information from the Context section
+2. Do NOT make assumptions about API endpoints, headers, or parameters
+3. Follow the documented API specification exactly
+4. Include all necessary imports
+5. Handle errors appropriately (raise for non-200 responses)
+6. Write clean, production-ready code
+
+Output format:
+- Provide a single Python code block with ```python fences
+- Include import statements
+- Write the complete function as specified
+"""
 
 
 # For this simple example
@@ -52,11 +66,8 @@ REQUIRED_SNIPPETS = [
 
 
 def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
-    """TODO: Select and return the relevant subset of documents from CORPUS for this task.
-
-    For example, return [] to simulate missing context, or [corpus[0]] to include the API docs.
-    """
-    return []
+    """Return API documentation for the task."""
+    return [corpus[0]] if corpus else []
 
 
 def make_user_prompt(question: str, context_docs: List[str]) -> str:
