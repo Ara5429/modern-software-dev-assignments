@@ -11,7 +11,11 @@ async function loadNotes(params = {}) {
   const notes = await fetchJSON('/notes/?' + query.toString());
   for (const n of notes) {
     const li = document.createElement('li');
-    li.innerHTML = `<strong>${n.title}</strong>: ${n.content}`;
+    // Fixed: Use textContent and DOM methods to prevent XSS
+    const titleStrong = document.createElement('strong');
+    titleStrong.textContent = n.title;
+    li.appendChild(titleStrong);
+    li.appendChild(document.createTextNode(': ' + n.content));
     list.appendChild(li);
   }
 }
