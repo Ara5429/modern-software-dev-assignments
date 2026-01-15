@@ -1,11 +1,25 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class NoteCreate(BaseModel):
-    title: str
-    content: str
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+
+    @field_validator("title")
+    @classmethod
+    def validate_title_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Title cannot be empty")
+        return v
+
+    @field_validator("content")
+    @classmethod
+    def validate_content_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Content cannot be empty")
+        return v
 
 
 class NoteRead(BaseModel):
@@ -20,12 +34,33 @@ class NoteRead(BaseModel):
 
 
 class NotePatch(BaseModel):
-    title: str | None = None
-    content: str | None = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    content: str | None = Field(None, min_length=1)
+
+    @field_validator("title")
+    @classmethod
+    def validate_title_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("Title cannot be empty")
+        return v
+
+    @field_validator("content")
+    @classmethod
+    def validate_content_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("Content cannot be empty")
+        return v
 
 
 class ActionItemCreate(BaseModel):
-    description: str
+    description: str = Field(..., min_length=1)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Description cannot be empty")
+        return v
 
 
 class ActionItemRead(BaseModel):
@@ -40,7 +75,12 @@ class ActionItemRead(BaseModel):
 
 
 class ActionItemPatch(BaseModel):
-    description: str | None = None
+    description: str | None = Field(None, min_length=1)
     completed: bool | None = None
 
-
+    @field_validator("description")
+    @classmethod
+    def validate_description_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("Description cannot be empty")
+        return v
