@@ -1,9 +1,17 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
+# Association table for many-to-many relationship between Note and Tag
+note_tags = Table(
+    "note_tags",
+    Base.metadata,
+    Column("note_id", Integer, ForeignKey("notes.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+)
 
 
 class TimestampMixin:
@@ -19,6 +27,20 @@ class Note(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
+
+    # Many-to-many relationship with Tag
+    tags = relationship("Tag", secondary=note_tags, back_populates="notes")
+
+
+class Tag(Base, TimestampMixin):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), unique=True, nullable=False)
+    color = Column(String(7), nullable=False)  # hex color like #FF0000
+
+    # Many-to-many relationship with Note
+    notes = relationship("Note", secondary=note_tags, back_populates="tags")
 
 
 class ActionItem(Base, TimestampMixin):
