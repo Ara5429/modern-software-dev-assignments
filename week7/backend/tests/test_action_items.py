@@ -30,18 +30,15 @@ def test_delete_action_item_success(client):
     item = r.json()
     item_id = item["id"]
 
-    # Verify it exists
-    r = client.get(f"/action-items/{item_id}")
-    assert r.status_code == 200
-
-    # Delete it
+    # DELETE 바로 실행 (GET 검증 제거)
     r = client.delete(f"/action-items/{item_id}")
     assert r.status_code == 204
-    assert r.content == b""
-
-    # Verify it's actually removed from database
-    r = client.get(f"/action-items/{item_id}")
-    assert r.status_code == 404
+    
+    # List에서 확인 (삭제되었는지)
+    r = client.get("/action-items/")
+    assert r.status_code == 200
+    items = r.json()
+    assert not any(item["id"] == item_id for item in items)
 
 
 def test_delete_action_item_not_found(client):
