@@ -1,0 +1,205 @@
+rules:
+  # SQL Injection Detection
+  - id: sql-injection-raw-query
+    pattern: |
+      execute($QUERY)
+    where:
+      - pattern-inside: |
+          $QUERY = f"..."
+          ...
+    message: Potential SQL injection vulnerability - using f-strings in SQL queries
+    severity: ERROR
+    languages: [python]
+    
+  - id: sql-injection-string-format
+    pattern: |
+      execute(f"SELECT * FROM {$TABLE} WHERE id = {$VAR}")
+    message: Potential SQL injection - using f-strings or format() in SQL queries
+    severity: ERROR
+    languages: [python]
+    
+  - id: sql-injection-text
+    pattern: |
+      text($QUERY)
+    where:
+      - metavariable-regex:
+          metavariable: $QUERY
+          regex: .*\$.*|.*\{.*|.*%.*|.*\+.*
+    message: Potential SQL injection - dynamic SQL query construction
+    severity: WARNING
+    languages: [python]
+
+  # Hardcoded Secrets Detection
+  - id: hardcoded-secret-password
+    pattern: |
+      password = "$SECRET"
+    message: Hardcoded password detected - use environment variables or secrets management
+    severity: ERROR
+    languages: [python]
+    
+  - id: hardcoded-secret-api-key
+    pattern: |
+      api_key = "$SECRET"
+    message: Hardcoded API key detected - use environment variables or secrets management
+    severity: ERROR
+    languages: [python]
+    
+  - id: hardcoded-secret-token
+    pattern: |
+      token = "$SECRET"
+    message: Hardcoded token detected - use environment variables or secrets management
+    severity: ERROR
+    languages: [python]
+    
+  - id: hardcoded-secret-general
+    pattern-either:
+      - pattern: |
+          $VAR = "$SECRET"
+      - pattern: |
+          $VAR = '$SECRET'
+    where:
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (password|secret|key|token|credential|auth|api_key|access_token|private_key)
+      - metavariable-regex:
+          metavariable: $SECRET
+          regex: (?!^(test|example|placeholder|dummy|changeme)$).{8,}
+    message: Potential hardcoded secret detected
+    severity: WARNING
+    languages: [python]
+
+  # CORS Misconfiguration
+  - id: cors-wildcard-origin
+    pattern: |
+      allow_origins=["*"]
+    message: CORS wildcard origin allows all domains - restrict to specific origins
+    severity: WARNING
+    languages: [python]
+    
+  - id: cors-allow-all-methods
+    pattern: |
+      allow_methods=["*"]
+    message: CORS allows all HTTP methods - restrict to required methods only
+    severity: INFO
+    languages: [python]
+
+  # Authentication/Authorization Issues
+  - id: missing-authentication
+    pattern: |
+      @router.$METHOD(...)
+      def $FUNC(...):
+        ...
+    where:
+      - not pattern-inside: |
+          def $FUNC(..., Depends($AUTH), ...):
+            ...
+      - not pattern-inside: |
+          @router.$METHOD(..., dependencies=[Depends($AUTH)])
+          def $FUNC(...):
+            ...
+    message: Endpoint may be missing authentication - verify if authentication is required
+    severity: INFO
+    languages: [python]
+
+  # Unsafe Deserialization
+  - id: unsafe-pickle-load
+    pattern: |
+      pickle.load($FILE)
+    message: Unsafe deserialization with pickle.load - can execute arbitrary code
+    severity: ERROR
+    languages: [python]
+    
+  - id: unsafe-yaml-load
+    pattern: |
+      yaml.load($FILE)
+    message: Unsafe YAML loading - use yaml.safe_load() instead
+    severity: WARNING
+    languages: [python]
+
+  # Path Traversal
+  - id: path-traversal-open
+    pattern: |
+      open($PATH)
+    where:
+      - metavariable-regex:
+          metavariable: $PATH
+          regex: .*\.\./.*|.*\.\.\\\\.*
+    message: Potential path traversal vulnerability
+    severity: ERROR
+    languages: [python]
+
+  # Insecure Random Number Generation
+  - id: insecure-random
+    pattern: |
+      random.$FUNC(...)
+    where:
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: (random|randint|choice|sample)
+    message: Using random module for security-sensitive operations - use secrets module instead
+    severity: WARNING
+    languages: [python]
+
+  # Debug Mode in Production
+  - id: debug-mode-enabled
+    pattern: |
+      app = FastAPI(..., debug=True)
+    message: Debug mode enabled - disable in production
+    severity: WARNING
+    languages: [python]
+    
+  - id: reload-enabled
+    pattern: |
+      uvicorn.run(..., reload=True)
+    message: Auto-reload enabled - disable in production
+    severity: INFO
+    languages: [python]
+
+  # SQLAlchemy Raw SQL (if used)
+  - id: sqlalchemy-text-injection
+    pattern: |
+      text(f"$QUERY")
+    message: Potential SQL injection with SQLAlchemy text() and f-strings
+    severity: ERROR
+    languages: [python]
+    
+  - id: sqlalchemy-execute-raw
+    pattern: |
+      execute(f"$QUERY")
+    message: Potential SQL injection with raw execute() and f-strings
+    severity: ERROR
+    languages: [python]
+
+  # Environment Variable Exposure
+  - id: env-var-in-log
+    pattern: |
+      print($VAR)
+    where:
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: .*os\.getenv.*|.*os\.environ.*
+    message: Potential exposure of environment variables in logs
+    severity: WARNING
+    languages: [python]
+
+  # Missing Input Validation
+  - id: missing-input-validation
+    pattern: |
+      @router.$METHOD("/{$PARAM}")
+      def $FUNC($PARAM, ...):
+        ...
+    where:
+      - not pattern-inside: |
+          def $FUNC($PARAM: $TYPE, ...):
+            ...
+    message: Path parameter may need type validation
+    severity: INFO
+    languages: [python]
+
+  # Insecure HTTP
+  - id: insecure-http-request
+    pattern: |
+      requests.get("http://...")
+    message: Using HTTP instead of HTTPS - sensitive data may be exposed
+    severity: WARNING
+    languages: [python]
